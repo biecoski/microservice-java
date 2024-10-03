@@ -13,3 +13,12 @@ spring:
           - 'configs/{application}'
           #username: teste
           #password: teste
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+        - '*'
+  endpoint:
+    health:
+      show-details: always
