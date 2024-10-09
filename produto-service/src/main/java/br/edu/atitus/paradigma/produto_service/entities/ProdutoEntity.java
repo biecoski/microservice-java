@@ -21,6 +21,8 @@ public class ProdutoEntity {
 	
 	@Transient //Indica que este atributo não faz parte da tabela no BD
 	private String ambiente;
+	@Transient
+	private double valorConvertido;
 
 	public Integer getId() {
 		return id;
@@ -60,6 +62,14 @@ public class ProdutoEntity {
 
 	public void setAmbiente(String ambiente) {
 		this.ambiente = ambiente;
+	}
+
+	public double getValorConvertido() {
+		return valorConvertido;
+	}
+
+	public void setValorConvertido(double valorConvertido) {
+		this.valorConvertido = valorConvertido;
 	}
 	
 	
