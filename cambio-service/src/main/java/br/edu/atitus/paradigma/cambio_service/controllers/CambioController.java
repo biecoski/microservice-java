@@ -13,6 +13,7 @@ import br.edu.atitus.paradigma.cambio_service.clients.CotacaoClient;
 import br.edu.atitus.paradigma.cambio_service.clients.CotacaoResponse;
 import br.edu.atitus.paradigma.cambio_service.entities.CambioEntity;
 import br.edu.atitus.paradigma.cambio_service.repositories.CambioRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @RestController
 @RequestMapping("cambio-service")
@@ -31,18 +32,18 @@ public class CambioController {
 	private int porta;
 	
 	@GetMapping("/{valor}/{origem}/{destino}")
+	@CircuitBreaker(name = "cotacaoClient",fallbackMethod = "getCambioFromDB")
 	public ResponseEntity<CambioEntity> getCambio(
 			@PathVariable double valor,
 			@PathVariable String origem,
 			@PathVariable String destino) throws Exception {
 		
-		//CambioEntity cambio = cambioRepository.findByOrigemAndDestino(origem, destino)
-		//		.orElseThrow(() -> new Exception("Câmbio não encontrado para esta origem e destino"));
 		
 		CambioEntity cambio = new CambioEntity();
 		cambio.setOrigem(origem);
 		cambio.setDestino(destino);
 		double fator;
+		System.out.println("Tentativa via Banco Central");
 		CotacaoResponse cotacaoOrigem = cotacaoClient.getCotacao(origem, "10-16-2024");
 		double fatorOrigem = cotacaoOrigem.getValue().get(0).getCotacaoVenda();
 		if (destino.equals("BRL")) {
@@ -57,6 +58,18 @@ public class CambioController {
 		
 		cambio.setValorConvertido(valor * cambio.getFator());
 		cambio.setAmbiente("Cambio-Service run in port: " + porta);
+		return ResponseEntity.ok(cambio);
+	}
+	public ResponseEntity<CambioEntity> getCambioFromDB(
+			double valor,
+			String origem,
+			String destino,
+			Throwable e) throws Exception {
+		
+		CambioEntity cambio = cambioRepository.findByOrigemAndDestino(origem, destino)
+			.orElseThrow(() -> new Exception("Câmbio não encontrado para esta origem e destino"));
+		cambio.setValorConvertido(valor * cambio.getFator());
+		cambio.setAmbiente("Cambio-Service run in port: " + porta + "(From DB)");
 		return ResponseEntity.ok(cambio);
 	}
 	
